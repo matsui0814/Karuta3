@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コアバリューカルタゲーム</title>
+    <style>
+        :root {
+            --primary-color: #3F51B5;
+            --primary-dark: #303F9F;
+            --success-color: #4CAF50;
+            --error-color: #F44336;
+            --background-color: #f5f5f5;
+            --card-color: #fff;
+            --text-color: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin: 0.5rem 0 1rem;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .reader-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .reader-card {
+            width: 100%;
+            min-height: clamp(80px, 20vh, 150px);
+            background-color: var(--card-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: clamp(0.5rem, 2vw, 1rem);
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .poem-text {
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            line-height: 1.5;
+            text-align: left;
+            width: 100%;
+        }
+
+        .card-area {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: clamp(0.25rem, 1vw, 0.5rem);
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background-color: var(--card-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 4px;
+            padding: clamp(0.25rem, 1vw, 0.5rem);
+            min-height: clamp(50px, 10vh, 70px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: clamp(0.65rem, 2vw, 0.8rem);
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            word-break: break-word;
+        }
+
+        .card:hover {
+            background-color: #E8EAF6;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .card.correct {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .card.incorrect {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .card.matched {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .controls {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: clamp(0.4rem, 2vw, 0.75rem) clamp(0.6rem, 3vw, 1rem);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .info-panel {
+            margin-top: 1rem;
+            padding: clamp(0.5rem, 2vw, 1rem);
+            background-color: var(--card-color);
+            border-radius: 8px;
+            width: 100%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .info-panel h2 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+
+        .info-panel p {
+            margin: 0.25rem 0;
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+        }
+
+        .score-display {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            font-weight: bold;
+        }
+
+        .result-message {
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            font-weight: bold;
+            text-align: center;
+            margin: 0.5rem 0;
+            min-height: 1.5rem;
+        }
+
+        .japanese-phrase {
+            font-weight: bold;
+            margin-top: 0.5rem;
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            color: var(--text-color);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 0.3rem;
+            margin-bottom: 0.75rem;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-selector button {
+            padding: clamp(0.3rem, 1.5vw, 0.5rem) clamp(0.5rem, 2vw, 0.75rem);
+            border-radius: 15px;
+            border: 1px solid var(--primary-color);
+            background-color: transparent;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: clamp(0.65rem, 2vw, 0.8rem);
+            transition: all 0.2s;
+        }
+
+        .mode-selector button.mode-active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .card-element, .card-action {
+            margin-bottom: 0.2rem;
+            text-align: left;
+            line-height: 1.2;
+            width: 100%;
+        }
+
+        .card-english {
+            text-align: left;
+            width: 100%;
+        }
+
+        .card-text {
+            text-align: center;
+            font-size: clamp(0.65rem, 2vw, 0.75rem);
+            line-height: 1.3;
+            width: 100%;
+        }
+        
+        .toggle-info {
+            margin-top: 0.5rem;
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            color: var(--primary-color);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* タブレット向けレイアウト調整 */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .card-area {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .info-panel {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* モバイル向けレイアウト調整 */
+        @media (max-width: 480px) {
+            .card-area {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .info-panel {
+                display: none; /* スペース確保のため説明パネルは非表示（ボタンで表示可能） */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>コアバリューカルタゲーム</h1>
+        
+        <div class="game-area">
+        <div class="score-display">
+            <div>残り: <span id="remaining-cards">0</span></div>
+            <div>得点: <span id="score">0</span>点</div>
+        </div>
+        
+        <div class="mode-selector">
+            <button id="easy-mode" class="mode-active">優しい</button>
+            <button id="hard-mode">難しい</button>
+            <button id="expert-mode">エキスパート</button>
+        </div>
+
+        <div class="reader-area">
+            <div class="reader-card">
+                <div class="poem-text" id="current-poem"></div>
+                <div class="japanese-phrase" id="current-japanese"></div>
+            </div>
+            <div class="result-message" id="result-message"></div>
+        </div>
+
+        <div class="card-area" id="card-area"></div>
+
+        <div class="controls">
+            <button id="next-button">スタート</button>
+            <button id="restart-button">やり直す</button>
+        </div>
+
+        <div class="toggle-info" id="toggle-info">遊び方を表示</div>
+        
+        <div class="info-panel" id="info-panel" style="display: none;">
+            <h2>遊び方</h2>
+            <p>1. 「スタート」をクリックすると、札が読み上げられます。</p>
+            <p>2. 優しいモード：上の句（説明文）を見て、下の句（構成要素・日常行動・英語）のカードを選びます。</p>
+            <p>3. 難しいモード：下の句（構成要素と日常行動・英語）を見て、上の句（説明文）のカードを選びます。</p>
+            <p>4. エキスパートモード：構成要素のみ表示され、日常行動が非表示になります。</p>
+            <p>5. できるだけ早く札を取ると高得点になります！（最速で10点、遅くなるほど減点）</p>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // コアバリューの要素
+        const allValues = [
+            {
+                number: 1,
+                type: "element",
+                content: {
+                    element: "構成要素：主体性",
+                    action: "日常行動：手を挙げる"
+                },
+                description: "言われてからやる、指示されてからやるのではなく、自ら手を挙げ、機会をとりにいく。"
+            },
+            {
+                number: 2,
+                type: "element",
+                content: {
+                    element: "構成要素：目的思考",
+                    action: "日常行動：仕事を意味づける"
+                },
+                description: "その仕事は、会社にとって、組織にとって、自分自身にとって、どういう意味を持つのかを考える。"
+            },
+            {
+                number: 3,
+                type: "element",
+                content: {
+                    element: "構成要素：完遂力",
+                    action: "日常行動：成果を見届ける"
+                },
+                description: "自分の手を離れたとしても、その仕事は終わっていない。仕事の目的が達成されたのかまでを見届ける。"
+            },
+            {
+                number: 4,
+                type: "element",
+                content: {
+                    element: "構成要素：冒険心",
+                    action: "日常行動：未知を既知に"
+                },
+                description: "失敗を恐れず、果敢に挑戦する。未知を既知にしていくことで新たな道が開けていく。"
+            },
+            {
+                number: 5,
+                type: "element",
+                content: {
+                    element: "構成要素：創造性",
+                    action: "日常行動：WOW!をつくる"
+                },
+                description: "「それすごいね！」と言われる仕事を。自分ならではの新たな発想を、仕事に持ち込んでいく。"
+            },
+            {
+                number: 6,
+                type: "element",
+                content: {
+                    element: "構成要素：スピード",
+                    action: "日常行動：まずやってみる"
+                },
+                description: "悩むよりも先に行動する。まずやってみるからこそ、できることが増えていく。"
+            },
+            {
+                number: 7,
+                type: "element",
+                content: {
+                    element: "構成要素：マルチアングル",
+                    action: "日常行動：他者視点で考える"
+                },
+                description: "マネージャー、他の部門、顧客など、他者の視点にたって自分の仕事を見つめ直し、行動する。"
+            },
+            {
+                number: 8,
+                type: "element",
+                content: {
+                    element: "構成要素：巻き込み力",
+                    action: "日常行動：共通のゴールをつくる"
+                },
+                description: "壁を越え、お互いのミッション実現につながる共通のゴールをつくりだし、共に達成する。"
+            },
+            {
+                number: 9,
+                type: "element",
+                content: {
+                    element: "構成要素：相互発展",
+                    action: "日常行動：フィードバックから学びあう"
+                },
+                description: "お互いに気付いたことがあれば、相手の成長を願ってフィードバックし、感謝の気持ちで受け止める。"
+            },
+            {
+                number: 10,
+                type: "element",
+                content: {
+                    element: "構成要素：相互信頼",
+                    action: "日常行動：小さな約束を守る"
+                },
+                description: "小さくて些細な約束であっても、自分がやるといったことを守ることが、大きな信頼へとつながっていく。"
+            },
+            {
+                number: 11,
+                type: "element",
+                content: {
+                    element: "構成要素：相互尊重",
+                    action: "日常行動：まず肯定的に受け止める"
+                },
+                description: "誰もが自分にない視点を持っていることを認め、違和感があることでもまず肯定的に受け止める。"
+            },
+            {
+                number: 12,
+                type: "element",
+                content: {
+                    element: "構成要素：社会的責任",
+                    action: "日常行動：チームとして正しいことを選ぶ"
+                },
+                description: "個人としての正しさを押しつけるのではなく、チームとしての正しさを常に考え、倫理観を持って選択する。"
+            },
+            {
+                number: 13,
+                type: "english",
+                content: {
+                    english: "Take Ownership"
+                },
+                description: "自分ごとでやりきる"
+            },
+            {
+                number: 14,
+                type: "english",
+                content: {
+                    english: "Playful Challenge"
+                },
+                description: "遊び心を持ってチャレンジ"
+            },
+            {
+                number: 15,
+                type: "english",
+                content: {
+                    english: "Beyond Boundaries"
+                },
+                description: "越境し共に高めあう"
+            },
+            {
+                number: 16,
+                type: "english",
+                content: {
+                    english: "Integrity Driven"
+                },
+                description: "チーム・顧客・社会に対して誠実に"
+            }
+        ];
+
+        // ゲーム状態
+        let valueIndex = 0;         // 現在の要素インデックス
+        let currentValue = null;    // 現在の要素
+        let score = 0;              // スコア
+        let matchedCards = [];      // マッチした札のID
+        let timer = null;           // タイマー
+        let seconds = 0;            // 経過秒数
+        let isWaitingForNext = true; // 次の札を待っている状態か
+        let poemReadTime = 0;       // 上の句が読まれた時間
+        let questionValues = [];    // 出題する問題
+        let displayValues = [];     // 表示用に並び替えられた問題
+        let gameMode = 'easy';      // ゲームモード (easy, hard, expert)
+
+        // DOM要素
+        const currentPoemElement = document.getElementById('current-poem');
+        const currentJapaneseElement = document.getElementById('current-japanese');
+        const cardAreaElement = document.getElementById('card-area');
+        const scoreElement = document.getElementById('score');
+        const remainingCardsElement = document.getElementById('remaining-cards');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const resultMessageElement = document.getElementById('result-message');
+        const easyModeButton = document.getElementById('easy-mode');
+        const hardModeButton = document.getElementById('hard-mode');
+        const expertModeButton = document.getElementById('expert-mode');
+        const toggleInfoButton = document.getElementById('toggle-info');
+        const infoPanel = document.getElementById('info-panel');
+
+        // 配列をシャッフルする関数
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // ゲームを初期化
+        function initGame() {
+            // ゲーム状態をリセット
+            // 全カードをシャッフル
+            const gameValues = shuffleArray([...allValues]);
+            
+            // 全16枚のカードを使用
+            questionValues = gameValues.slice(0, 16);
+            
+            // 出題順もシャッフル
+            questionValues = shuffleArray(questionValues);
+            
+            // 表示順も別途シャッフル
+            displayValues = shuffleArray([...questionValues]);
+            
+            valueIndex = 0;
+            score = 0;
+            matchedCards = [];
+            seconds = 0;
+            isWaitingForNext = true;
+            
+            // UI要素をリセット
+            scoreElement.textContent = score;
+            remainingCardsElement.textContent = questionValues.length;
+            resultMessageElement.textContent = '';
+            currentPoemElement.textContent = '「スタート」をクリックしてください';
+            currentJapaneseElement.textContent = '';
+            
+            // カード領域を生成
+            renderCards();
+            
+            // タイマーをリセット
+            clearInterval(timer);
+            timer = setInterval(updateTimer, 1000);
+            
+            // ボタン状態を設定
+            nextButton.disabled = false;
+            nextButton.textContent = 'スタート';
+        }
+
+        // カードを描画
+        function renderCards() {
+            cardAreaElement.innerHTML = '';
+            
+            // displayValues（シャッフルされた表示順）を使用してカードを表示
+            displayValues.forEach((value) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.valueId = value.number;
+                
+                if (gameMode === 'hard' || gameMode === 'expert') {
+                    // 難しいモード/エキスパートモード: 上の句（説明文など）をカードに表示
+                    // 説明文は全文表示する
+                    card.innerHTML = `<div class="card-text">${value.description}</div>`;
+                } else {
+                    // 優しいモード: 下の句（構成要素など）をカードに表示
+                    if (value.type === "element") {
+                        // 「構成要素：」と「日常行動：」をそのまま表示
+                        const elementText = value.content.element;
+                        const actionText = value.content.action;
+                        
+                        card.innerHTML = `
+                            <div class="card-element">${elementText}</div>
+                            ${gameMode === 'expert' ? '' : `<div class="card-action">${actionText}</div>`}
+                        `;
+                    } else if (value.type === "english") {
+                        card.innerHTML = `
+                            <div class="card-english">${value.content.english}</div>
+                        `;
+                    }
+                }
+                
+                // すでにマッチしたカードはグレーアウト
+                if (matchedCards.includes(value.number)) {
+                    card.classList.add('matched');
+                } else {
+                    card.addEventListener('click', handleCardClick);
+                }
+                
+                cardAreaElement.appendChild(card);
+            });
+        }
+
+        // カードクリックイベント
+        function handleCardClick(event) {
+            // 次の札を待っている状態ならカードを選択できない
+            if (isWaitingForNext) return;
+            
+            const card = event.currentTarget;
+            const valueId = parseInt(card.dataset.valueId);
+            
+            // 正解のカードを強調表示
+            const correctCard = document.querySelector(`.card[data-value-id="${currentValue.number}"]`);
+            if (correctCard) {
+                correctCard.classList.add('correct');
+            }
+            
+            if (valueId === currentValue.number) {
+                // 正解
+                matchedCards.push(valueId);
+                
+                // スピードに応じて得点を計算（最速で10点、10秒後に1点まで減少）
+                const reactionTime = (Date.now() - poemReadTime) / 1000; // 秒単位
+                const speedPoints = Math.max(1, Math.floor(10 - reactionTime / 1.2));
+                const pointsEarned = speedPoints;
+                
+                score += pointsEarned;
+                scoreElement.textContent = score;
+                remainingCardsElement.textContent = questionValues.length - matchedCards.length;
+                resultMessageElement.textContent = `正解！ +${pointsEarned}点`;
+                resultMessageElement.style.color = '#4caf50';
+            } else {
+                // 不正解
+                card.classList.add('incorrect');
+                resultMessageElement.textContent = '不正解！';
+                resultMessageElement.style.color = '#f44336';
+            }
+            
+            // 札を選んだ後は次の札を待つ状態にする
+            isWaitingForNext = true;
+            nextButton.textContent = '次へ';
+            
+            // 次の問題が終わりかどうか
+            if (valueIndex >= questionValues.length) {
+                if (matchedCards.length >= questionValues.length) {
+                    // 全ての札が取られていたらゲーム終了
+                    endGame();
+                }
+            } else {
+                // 自動で次の問題に進む（1秒後）
+                setTimeout(() => {
+                    readNextValue();
+                }, 1000);
+            }
+        }
+
+        // モード切替関数
+        function setGameMode(mode) {
+            gameMode = mode;
+            
+            // ボタンのスタイル更新
+            easyModeButton.classList.remove('mode-active');
+            hardModeButton.classList.remove('mode-active');
+            expertModeButton.classList.remove('mode-active');
+            
+            if (mode === 'easy') {
+                easyModeButton.classList.add('mode-active');
+            } else if (mode === 'hard') {
+                hardModeButton.classList.add('mode-active');
+            } else if (mode === 'expert') {
+                expertModeButton.classList.add('mode-active');
+            }
+            
+            // ゲームをリセット
+            initGame();
+        }
+        
+        // 次の要素を読み上げる
+        function readNextValue() {
+            // すでに全ての札があてられているか確認
+            if (matchedCards.length >= questionValues.length) {
+                endGame();
+                return;
+            }
+            
+            // 次ボタンが「スタート」のとき
+            if (nextButton.textContent === 'スタート') {
+                nextButton.textContent = '次へ';
+            }
+            
+            // 全ての要素を読み終えたらゲーム終了
+            if (valueIndex >= questionValues.length) {
+                endGame();
+                return;
+            }
+            
+            // 次の要素を読み上げる前に不正解表示のみリセット（正解表示はそのまま残す）
+            document.querySelectorAll('.card.incorrect').forEach(card => {
+                card.classList.remove('incorrect');
+            });
+            
+            // 結果メッセージをクリア
+            resultMessageElement.textContent = '';
+            
+            // 現在の要素を設定
+            currentValue = questionValues[valueIndex];
+            
+            if (gameMode === 'hard' || gameMode === 'expert') {
+                // 難しいモード/エキスパートモード: 下の句を表示して、上の句のカードを選ぶ
+                if (currentValue.type === "element") {
+                    if (gameMode === 'expert') {
+                        // エキスパートモード: 構成要素のみ表示
+                        currentPoemElement.textContent = currentValue.content.element;
+                    } else {
+                        // 難しいモード: 構成要素と日常行動を表示
+                        const elementText = currentValue.content.element;
+                        const actionText = currentValue.content.action;
+                        currentPoemElement.textContent = `${elementText}\n${actionText}`;
+                    }
+                } else {
+                    // 英語表現の場合
+                    currentPoemElement.textContent = currentValue.content.english;
+                }
+                currentJapaneseElement.textContent = "";
+            } else {
+                // 優しいモード: 上の句を表示して、下の句のカードを選ぶ
+                // 説明文は全文表示する
+                currentPoemElement.textContent = currentValue.description;
+                currentJapaneseElement.textContent = "";
+            }
+            
+            // 何問目か表示
+            currentJapaneseElement.textContent = `【${valueIndex+1}/16問目】`;
+            
+            // ユーザーに札を選ばせる状態に
+            isWaitingForNext = false;
+            
+            // 上の句が読まれた時間を記録（得点計算に使用）
+            poemReadTime = Date.now();
+            
+            // 次の要素へ
+            valueIndex++;
+        }
+
+        // タイマーを更新
+        function updateTimer() {
+            seconds++;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            currentPoemElement.textContent = 'ゲーム終了！';
+            currentJapaneseElement.textContent = '';
+            resultMessageElement.textContent = `最終スコア: ${score}点`;
+            resultMessageElement.style.color = '#000';
+            nextButton.disabled = true;
+            
+            // 終了時にすべての正解カードがわかるように
+            document.querySelectorAll('.card').forEach(card => {
+                // 正解したカードは緑色のままにする
+                if (matchedCards.includes(parseInt(card.dataset.valueId))) {
+                    card.classList.add('correct');
+                }
+                card.classList.add('matched');
+            });
+        }
+
+        // 遊び方の表示/非表示を切り替える
+        function toggleInfoPanel() {
+            if (infoPanel.style.display === 'none') {
+                infoPanel.style.display = 'block';
+                toggleInfoButton.textContent = '遊び方を隠す';
+            } else {
+                infoPanel.style.display = 'none';
+                toggleInfoButton.textContent = '遊び方を表示';
+            }
+        }
+
+        // イベントリスナー
+        nextButton.addEventListener('click', readNextValue);
+        restartButton.addEventListener('click', initGame);
+        easyModeButton.addEventListener('click', () => setGameMode('easy'));
+        hardModeButton.addEventListener('click', () => setGameMode('hard'));
+        expertModeButton.addEventListener('click', () => setGameMode('expert'));
+        toggleInfoButton.addEventListener('click', toggleInfoPanel);
+
+        // ゲーム開始
+        initGame();
+        
+        // メディアクエリによる要素自動調整
+        function adjustForScreenSize() {
+            const width = window.innerWidth;
+            if (width <= 480) {
+                // モバイル画面では説明パネルを隠す
+                infoPanel.style.display = 'none';
+                toggleInfoButton.textContent = '遊び方を表示';
+            }
+        }
+
+        // 画面サイズ変更時に再調整
+        window.addEventListener('resize', adjustForScreenSize);
+        // 初期ロード時にも調整
+        adjustForScreenSize();
+    </script>
+</body>
+</html>
